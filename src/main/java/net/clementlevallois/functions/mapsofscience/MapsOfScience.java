@@ -557,7 +557,7 @@ public class MapsOfScience {
         return "";
     }
 
-    public void getAllWorksPagedWithCursor() throws InterruptedException{
+    public void getAllWorksPagedWithCursor() throws IOException, InterruptedException {
         Clock clock = new Clock("global clock");
         HttpClient client = HttpClient.newHttpClient();
 
@@ -585,6 +585,7 @@ public class MapsOfScience {
 
             HttpRequest request = HttpRequest.newBuilder().uri(uri).timeout(Duration.ofSeconds(25)).build();
 
+<<<<<<< HEAD
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -618,7 +619,6 @@ public class MapsOfScience {
         }
 
         queueProcessor.stop();
-
         queueProcessorThread.interrupt();
 
         clock.closeAndPrintClock();
