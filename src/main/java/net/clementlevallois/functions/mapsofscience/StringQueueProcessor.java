@@ -18,23 +18,23 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class JsonQueueProcessor implements Runnable {
+public class StringQueueProcessor implements Runnable {
 
     private static final int MAX_BYTES_PER_WRITE = 1024 * 1024; // 1 MB
-    private static  Duration FLUSH_INTERVAL = Duration.ofSeconds(30);
+    private static  Duration FLUSH_INTERVAL = Duration.ofSeconds(10);
 
     private final Path outputFilePath;
-    private final ConcurrentLinkedQueue<String> jsonQueue;
-    private boolean apiCallsRunning = true;
+    private final ConcurrentLinkedQueue<String> stringQueue;
+    private boolean jsonFilteringRunning = true;
 
-    public JsonQueueProcessor(Path outputFilePath, ConcurrentLinkedQueue<String> jsonQueue, int flushIntervalInSeconds) {
+    public StringQueueProcessor(Path outputFilePath, ConcurrentLinkedQueue<String> stringQueue, int flushIntervalInSeconds) {
         this.outputFilePath = outputFilePath;
-        this.jsonQueue = jsonQueue;
+        this.stringQueue = stringQueue;
         FLUSH_INTERVAL = Duration.ofSeconds(flushIntervalInSeconds);
     }
 
     public void stop() {
-        apiCallsRunning = false;
+        jsonFilteringRunning = false;
     }
 
     @Override
@@ -44,16 +44,14 @@ public class JsonQueueProcessor implements Runnable {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.APPEND)) {            
-            while (apiCallsRunning) {
-                String json = jsonQueue.poll();
-                if (json == null) {
+            while (jsonFilteringRunning) {
+                String string = stringQueue.poll();
+                if (string == null) {
                     // No more items in the queue, sleep for a bit before checking again
                     Thread.sleep(100);
                     continue;
                 }
-                json = json + ",";
-
-                ByteBuffer byteBuffer = ByteBuffer.wrap(json.getBytes(StandardCharsets.UTF_8));
+                ByteBuffer byteBuffer = ByteBuffer.wrap(string.getBytes(StandardCharsets.UTF_8));
                 do {
                     int bytesToWrite = Math.min(byteBuffer.remaining(), MAX_BYTES_PER_WRITE);
                     byteBuffer.limit(byteBuffer.position() + bytesToWrite);

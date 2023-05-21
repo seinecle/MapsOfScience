@@ -63,8 +63,8 @@ public class MapsOfScience {
 //        mos.getAllJournalsFromAllAuthors();
 //        mos.getJournalsCount();
 //        mos.getAuthorsCount();
-//        mos.getWorksCount();
-        mos.getAllWorksPagedWithCursor();
+        mos.getWorksCount();
+//        mos.getAllWorksPagedWithCursor();
 //        mos.getAllAuthorsPagedWithCursor();
 //        mos.getAllJournalsPagedWithCursor();
     }
@@ -585,7 +585,6 @@ public class MapsOfScience {
 
             HttpRequest request = HttpRequest.newBuilder().uri(uri).timeout(Duration.ofSeconds(25)).build();
 
-<<<<<<< HEAD
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 

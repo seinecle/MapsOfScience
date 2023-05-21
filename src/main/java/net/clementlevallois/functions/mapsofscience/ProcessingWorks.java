@@ -19,13 +19,12 @@ import net.clementlevallois.utils.Clock;
  */
 public class ProcessingWorks {
 
-    private String worksRawData = "data/all-works.json";
-    private String result = "data/all-works-result.json";
+    private final String worksRawData = "data/all-works-partial.json";
+    private final String result = "data/all-works-result.json";
 
     public static void main(String[] args) throws IOException {
         ProcessingWorks processingWorks = new ProcessingWorks();
         processingWorks.formatAsJsonArray();
-//        processingWorks.testJsonLoadAsStream();
     }
 
     private void formatAsJsonArray() throws IOException {
@@ -40,14 +39,15 @@ public class ProcessingWorks {
         Clock clock = new Clock("general");
         
         // create a buffered input stream and buffered output stream with a small buffer size
-        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ)); BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFilePath, StandardOpenOption.WRITE))) {
+        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ));
+                BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFilePath, StandardOpenOption.WRITE))) {
 
             // write the '[' character at the beginning of the output file
             out.write('[');
 
             // copy the contents of the input file to the output file, excluding the last character
             int bufferSize = 8192;
-            byte[] buffer = new byte[bufferSize];
+            byte[] buffer = new byte[bufferSize * 2];
             int bytesRead;
 //            byte lastByte = 0;
             while ((bytesRead = in.read(buffer, 0, bufferSize)) != -1) {
@@ -68,10 +68,6 @@ public class ProcessingWorks {
         Files.move(tempFilePath, resultPath, StandardCopyOption.REPLACE_EXISTING);
         clock.closeAndPrintClock();
         
-    }
-
-    private void testJsonLoadAsStream() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
 }
