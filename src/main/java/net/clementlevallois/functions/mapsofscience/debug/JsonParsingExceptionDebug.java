@@ -1,4 +1,4 @@
-package net.clementlevallois.functions.mapsofscience;
+package net.clementlevallois.functions.mapsofscience.debug;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonParser;

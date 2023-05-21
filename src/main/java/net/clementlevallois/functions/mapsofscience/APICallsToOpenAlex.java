@@ -43,7 +43,7 @@ import net.clementlevallois.utils.Clock;
  *
  * @author LEVALLOIS
  */
-public class MapsOfScience {
+public class APICallsToOpenAlex {
 
     private int totalCountJournals = 0;
     private int totalCountAuthors = 0;
@@ -58,7 +58,7 @@ public class MapsOfScience {
     private final String REPLACEMENT_CHAR_FOR_SANITIZATION = "-";
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        MapsOfScience mos = new MapsOfScience();
+        APICallsToOpenAlex mos = new APICallsToOpenAlex();
 
 //        mos.getAllJournalsFromAllAuthors();
 //        mos.getJournalsCount();
@@ -496,7 +496,7 @@ public class MapsOfScience {
                 System.out.println("error when retrieving works of an author");
             }
         } catch (IOException | InterruptedException ex) {
-            Logger.getLogger(MapsOfScience.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(APICallsToOpenAlex.class.getName()).log(Level.SEVERE, null, ex);
         }
         return "";
     }
@@ -552,7 +552,7 @@ public class MapsOfScience {
                 System.out.println("error when retrieving works of an author");
             }
         } catch (IOException | InterruptedException ex) {
-            Logger.getLogger(MapsOfScience.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(APICallsToOpenAlex.class.getName()).log(Level.SEVERE, null, ex);
         }
         return "";
     }

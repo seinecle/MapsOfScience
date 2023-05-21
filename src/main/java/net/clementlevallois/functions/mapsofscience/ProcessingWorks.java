@@ -7,6 +7,7 @@ package net.clementlevallois.functions.mapsofscience;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -31,16 +32,15 @@ public class ProcessingWorks {
         Path filePath = Path.of(worksRawData);
         Path resultPath = Path.of(result);
         Path tempFilePath = Path.of("data/temp.tmp");
-        
+
         Files.deleteIfExists(resultPath);
         Files.deleteIfExists(tempFilePath);
         Files.createFile(tempFilePath);
-        
-        Clock clock = new Clock("general");
-        
+
+        Clock clock = new Clock("inserting a [ at the beginning");
+
         // create a buffered input stream and buffered output stream with a small buffer size
-        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ));
-                BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFilePath, StandardOpenOption.WRITE))) {
+        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ)); BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFilePath, StandardOpenOption.WRITE))) {
 
             // write the '[' character at the beginning of the output file
             out.write('[');
@@ -49,25 +49,44 @@ public class ProcessingWorks {
             int bufferSize = 8192;
             byte[] buffer = new byte[bufferSize * 2];
             int bytesRead;
-//            byte lastByte = 0;
             while ((bytesRead = in.read(buffer, 0, bufferSize)) != -1) {
-                if (bytesRead < bufferSize) {
-                    // save the last byte read from the input file
-//                    lastByte = buffer[bytesRead - 1];
-                    bytesRead--;
-                }
                 out.write(buffer, 0, bytesRead);
             }
-
-            // write the ']' character at the end of the output file
-            out.write(']');
         }
 
         // delete the input file and rename the output file to the input file name
 //        Files.delete(filePath);
         Files.move(tempFilePath, resultPath, StandardCopyOption.REPLACE_EXISTING);
         clock.closeAndPrintClock();
-        
+
+        clock = new Clock("removing the final comma");
+        try (RandomAccessFile file = new RandomAccessFile(resultPath.toString(), "rw")) {
+            long length = file.length();
+            if (length > 0) {
+                // Set the file length to exclude the last character
+                file.setLength(length - 1);
+                System.out.println("Last character removed from the file.");
+            } else {
+                System.out.println("The file is empty. No characters to remove.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        clock.closeAndPrintClock();
+
+        clock = new Clock("adding a final ]");
+        char characterToAppend = ']';
+
+        try (RandomAccessFile file = new RandomAccessFile(resultPath.toString(), "rw")) {
+            long fileLength = file.length();
+            file.seek(fileLength);
+            file.write(characterToAppend);
+            System.out.println("Character appended at the end of the file.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        clock.closeAndPrintClock();
+
     }
 
 }

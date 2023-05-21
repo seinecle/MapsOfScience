@@ -41,7 +41,6 @@ public class JsonStreamingParser {
         StringQueueProcessor queueProcessor = new StringQueueProcessor(result, queue, writeToDiskIntervalInSeconds);
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
-        Deque<Event> lastTenEvents = new ArrayDeque();
         InputStreamReader isr = new InputStreamReader(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         BufferedReader buffReader = new BufferedReader(isr);
         JsonParser jsonParser = Json.createParser(buffReader);
@@ -52,76 +51,68 @@ public class JsonStreamingParser {
         StringBuilder sbTemp = new StringBuilder();
         int count = 0;
         try {
-            while (jsonParser.hasNext()) {
-                Event e;
-                try {
-                    e = jsonParser.next();
-                } catch (Exception ex) {
-                    continue;
-                }
-// Add the current event to the queue
-                lastTenEvents.addLast(e);
+        while (jsonParser.hasNext()) {
+            Event e;
+            try {
+                e = jsonParser.next();
+            } catch (Exception ex) {
+                continue;
+            }
 
-                // If the queue exceeds size 10, remove the oldest event
-                if (lastTenEvents.size() > 10) {
-                    lastTenEvents.removeFirst();
+            if (e == Event.KEY_NAME) {
+                String keyName = jsonParser.getString();
+                if (keyName.equals("authorships")) {
+                    sbTemp = new StringBuilder();
                 }
-                if (e == Event.KEY_NAME) {
-                    String keyName = jsonParser.getString();
-                    if (keyName.equals("authorships")) {
-                        sbTemp = new StringBuilder();
+                if (keyName.equals("author")) {
+                    authorStarted = true;
+                }
+                if (keyName.equals("primary_location")) {
+                    primaryLocationStarted = true;
+                }
+                if (primaryLocationStarted && keyName.equals("source")) {
+                    sourceStarted = true;
+                }
+                if (sourceStarted && keyName.equals("id")) {
+                    jsonParser.next();
+                    if (jsonParser.currentEvent() != Event.VALUE_STRING) {
+                        continue;
                     }
-                    if (keyName.equals("author")) {
-                        authorStarted = true;
+                    String valueOfJournalId = jsonParser.getString();
+                    String lastPartOfJournalId = keepLastPartOfId(valueOfJournalId);
+                    sbTemp.insert(0, "|");
+                    sbTemp.insert(0, lastPartOfJournalId);
+                    sbTemp.deleteCharAt(sbTemp.length() - 1);
+                    sbTemp.append("\n");
+                    queue.add(sbTemp.toString());
+                    count++;
+                    sourceStarted = false;
+                    primaryLocationStarted = false;
+                    if (count % 100_000 == 0) {
+                        System.out.print("count: " + count);
+                        System.out.print(", ");
+                        clock.printElapsedTime();
                     }
-                    if (keyName.equals("primary_location")) {
-                        primaryLocationStarted = true;
+                }
+                if (authorStarted && keyName.equals("id")) {
+                    jsonParser.next();
+                    if (jsonParser.currentEvent() != Event.VALUE_STRING) {
+                        continue;
                     }
-                    if (primaryLocationStarted && keyName.equals("source")) {
-                        sourceStarted = true;
-                    }
-                    if (sourceStarted && keyName.equals("id")) {
-                        jsonParser.next();
-                        if (jsonParser.currentEvent() != Event.VALUE_STRING) {
-                            continue;
-                        }
-                        String valueOfJournalId = jsonParser.getString();
-                        String lastPartOfJournalId = keepLastPartOfId(valueOfJournalId);
-                        sbTemp.insert(0, "|");
-                        sbTemp.insert(0, lastPartOfJournalId);
-                        sbTemp.deleteCharAt(sbTemp.length() - 1);
-                        sbTemp.append("\n");
-                        queue.add(sbTemp.toString());
-                        count++;
-                        sourceStarted = false;
-                        primaryLocationStarted = false;
-                        if (count % 100_000 == 0) {
-                            System.out.print("count: " + count);
-                            System.out.print(", ");
-                            clock.printElapsedTime();
-                        }
-                    }
-                    if (authorStarted && keyName.equals("id")) {
-                        jsonParser.next();
-                        if (jsonParser.currentEvent() != Event.VALUE_STRING) {
-                            continue;
-                        }
-                        String valueOfAuthorId = jsonParser.getString();
-                        String lastPartOfAuthorId = keepLastPartOfId(valueOfAuthorId);
-                        sbTemp.append(lastPartOfAuthorId);
-                        sbTemp.append(",");
-                        authorStarted = false;
-                    }
+                    String valueOfAuthorId = jsonParser.getString();
+                    String lastPartOfAuthorId = keepLastPartOfId(valueOfAuthorId);
+                    sbTemp.append(lastPartOfAuthorId);
+                    sbTemp.append(",");
+                    authorStarted = false;
                 }
             }
+        }
         } catch (JsonParsingException exception) {
-            for (Event e : lastTenEvents) {
-                System.out.println(e.name());
-            }
             System.out.println("location: " + jsonParser.getLocation().getStreamOffset());
             System.out.println("current valid line: " + sbTemp.toString());
-            
         }
+        queueProcessor.stop();
+        queueProcessorThread.interrupt();
     }
 
     private String keepLastPartOfId(String fullId) {
