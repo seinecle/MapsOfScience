@@ -22,7 +22,7 @@ For instance, it becomes possible, at a glance, to contrast the publication prof
 ## Why re-doing maps of science all over again?
 A major issue with the maps of science as described above, is that they relied on private data to be built. ISI, Web of Knowledge, Scopus, Clarivate: all these products and companies were the providers of the data that was used to build the maps.
 
-This means that **as the data was private, it was not allowed to share it so that anyone could reproduce, update, build on the maps".**
+This means that **as the data was private, it was not allowed to share it so that anyone could reproduce, update, build new things with the maps.**
 
 The reality is that today, there is no free and easy way to access maps of science, even if the groundwork for them has been published more than 10 years ago.
 
@@ -31,9 +31,9 @@ This is the reason for this project. Today, thanks to the [OpenAlex foundation](
 ## Are you going to create maps exactly like they were produced before?
 Yes and no.
 
-Yes: I'll build maps of journals, so pretty much the principle followed by the pionneers.
+Yes: I'll start by building maps of journals, so pretty much the principle followed by the pionneers.
 
-No: maps of journals were built by measuring the similarity of journals based on citations. This is pretty data intensive, to say the least. But there was no clear alternative. Today, thanks to another great initiative ([ORCID](https://orcid.org/)), we have unique identifiers for a large number of authors. This provides a rich information to evaluate if two journals relate to each other: 2 journals can be said to be be similar if a number of authors published in both. 
+No: maps of journals were built by measuring the similarity of journals based on citations. This is pretty data intensive, to say the least. But there was no clear alternative. Today, thanks to another great initiative ([ORCID](https://orcid.org/)), we have unique identifiers for a large number of authors. This provides a rich information to evaluate if two journals relate to each other: 2 journals can be said to be be similar if a number of authors published in both. I expect it to be much less data intensive than citation-based approaches. As a consequence, it should lower considerably the complexity of the resources needed to build the maps: I aim to **design methods that allow to create maps by using a regular laptop, not an expensive cloud computing infrastructure**.
 
 
 
@@ -56,7 +56,7 @@ The data comes from the [OpenAlex Foundation](https://openalex.org/).
 
 ✅2. For each publication, note the journal where it appears, and the authors.
 
--> done! this is a 1.2Gb file.
+-> done! this produces a 1.2Gb file.
 
 ✅3. Process and transform this data to obtain a list of journals, and for each journal, the list of auhthors who published in it.
 
@@ -71,7 +71,7 @@ The data comes from the [OpenAlex Foundation](https://openalex.org/).
 
 -> should be pretty easy.
 
-🔨6. Visualize and layout all the journals and their connections in [Gephi](https://gephi.org)
+🔨6. Visualize and layout all the journals and their connections in [Gephi](https://gephi.org).
 
 🔨7. Publish the resulting pictures (and files used to generate them) on Github for anyone to reuse.
 
@@ -81,4 +81,4 @@ Code, data and assets created in this project are licensed with CC BY 4.0: free 
 ## How to cite / attribute
 If you use any of the assets produced here, citing this repository is vital to the continuation of the project. It takes a minute and makes a real difference:
 
-Levallois, Clement (2023). Designing maps of science with OpenAlex data. Github, https://github.com/seinecle/MapsOfScience
+Levallois, Clement (2023). Designing open maps of science with OpenAlex data. Github, https://github.com/seinecle/MapsOfScience
