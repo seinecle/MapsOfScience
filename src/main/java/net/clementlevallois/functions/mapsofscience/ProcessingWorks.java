@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import net.clementlevallois.utils.Clock;
 
@@ -20,30 +19,24 @@ import net.clementlevallois.utils.Clock;
  */
 public class ProcessingWorks {
 
-    private final String worksRawData = "data/all-works-partial.json";
-    private final String result = "data/all-works-result.json";
-
     public static void main(String[] args) throws IOException {
+        String worksRawData = "data/all-works-partial.json";
+        String result = "data/all-works-result.json";
         ProcessingWorks processingWorks = new ProcessingWorks();
-        processingWorks.formatAsJsonArray();
+        processingWorks.formatAsJsonArray(worksRawData, result);
     }
 
-    private void formatAsJsonArray() throws IOException {
+    public void formatAsJsonArray(String worksRawData, String result) throws IOException {
         Path filePath = Path.of(worksRawData);
         Path resultPath = Path.of(result);
-        Path tempFilePath = Path.of("data/temp.tmp");
 
         Files.deleteIfExists(resultPath);
-        Files.deleteIfExists(tempFilePath);
-        Files.createFile(tempFilePath);
+        Files.createFile(resultPath);
 
         Clock clock = new Clock("inserting a [ at the beginning");
 
         // create a buffered input stream and buffered output stream with a small buffer size
-        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ)); BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFilePath, StandardOpenOption.WRITE))) {
-
-            // write the '[' character at the beginning of the output file
-            out.write('[');
+        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(filePath, StandardOpenOption.READ)); BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultPath, StandardOpenOption.WRITE))) {
 
             // copy the contents of the input file to the output file, excluding the last character
             int bufferSize = 8192;
@@ -56,7 +49,6 @@ public class ProcessingWorks {
 
         // delete the input file and rename the output file to the input file name
 //        Files.delete(filePath);
-        Files.move(tempFilePath, resultPath, StandardCopyOption.REPLACE_EXISTING);
         clock.closeAndPrintClock();
 
         clock = new Clock("removing the final comma");

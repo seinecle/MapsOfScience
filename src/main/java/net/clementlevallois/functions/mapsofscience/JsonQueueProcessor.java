@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class JsonQueueProcessor implements Runnable {
 
     private static final int MAX_BYTES_PER_WRITE = 1024 * 1024; // 1 MB
-    private static  Duration FLUSH_INTERVAL = Duration.ofSeconds(30);
+    private static Duration FLUSH_INTERVAL = Duration.ofSeconds(30);
 
     private final Path outputFilePath;
     private final ConcurrentLinkedQueue<String> jsonQueue;
@@ -43,7 +43,10 @@ public class JsonQueueProcessor implements Runnable {
         try (FileChannel outputChannel = FileChannel.open(outputFilePath,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,
-                StandardOpenOption.APPEND)) {            
+                StandardOpenOption.APPEND)) {
+            ByteBuffer buf = ByteBuffer.allocate(1024);
+            buf.putChar('[');
+            outputChannel.write(buf);
             while (apiCallsRunning) {
                 String json = jsonQueue.poll();
                 if (json == null) {

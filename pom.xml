@@ -46,6 +46,11 @@
             <artifactId>utils-core</artifactId>
             <version>0.13</version>
         </dependency>
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>8.5.12</version>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -63,7 +68,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>net.clementlevallois.functions.mapsofscience.MapsOfScience</mainClass>
+                            <mainClass>net.clementlevallois.functions.mapsofscience.Controller</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

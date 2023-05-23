@@ -26,15 +26,16 @@ import net.clementlevallois.utils.Clock;
  */
 public class JsonStreamingParser {
 
-    static Path path = Path.of("data/all-works-result.json");
-    static Path result = Path.of("data/journal-and-authors-per-work.txt");
-
     public static void main(String args[]) throws FileNotFoundException, IOException {
+        String pathString = "data/all-works-well-formatted.json";
+        String pathResultString = "data/journal-and-authors-per-work.txt";
         JsonStreamingParser parser = new JsonStreamingParser();
-        parser.parseJournalIdsAndAuthorIds(path, result);
+        parser.parseJournalIdsAndAuthorIds(pathString, pathResultString);
     }
 
-    public void parseJournalIdsAndAuthorIds(Path path, Path pathResult) throws FileNotFoundException, IOException {
+    public void parseJournalIdsAndAuthorIds(String pathString, String pathResultString) throws FileNotFoundException, IOException {
+        Path path = Path.of(pathString);
+        Path result = Path.of(pathResultString);
         Clock clock = new Clock("general clock");
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue();
         int writeToDiskIntervalInSeconds = 5;
@@ -51,68 +52,69 @@ public class JsonStreamingParser {
         StringBuilder sbTemp = new StringBuilder();
         int count = 0;
         try {
-        while (jsonParser.hasNext()) {
-            Event e;
-            try {
-                e = jsonParser.next();
-            } catch (Exception ex) {
-                continue;
-            }
+            while (jsonParser.hasNext()) {
+                Event e;
+                try {
+                    e = jsonParser.next();
+                } catch (Exception ex) {
+                    continue;
+                }
 
-            if (e == Event.KEY_NAME) {
-                String keyName = jsonParser.getString();
-                if (keyName.equals("authorships")) {
-                    sbTemp = new StringBuilder();
-                }
-                if (keyName.equals("author")) {
-                    authorStarted = true;
-                }
-                if (keyName.equals("primary_location")) {
-                    primaryLocationStarted = true;
-                }
-                if (primaryLocationStarted && keyName.equals("source")) {
-                    sourceStarted = true;
-                }
-                if (sourceStarted && keyName.equals("id")) {
-                    jsonParser.next();
-                    if (jsonParser.currentEvent() != Event.VALUE_STRING) {
-                        continue;
+                if (e == Event.KEY_NAME) {
+                    String keyName = jsonParser.getString();
+                    if (keyName.equals("authorships")) {
+                        sbTemp = new StringBuilder();
                     }
-                    String valueOfJournalId = jsonParser.getString();
-                    String lastPartOfJournalId = keepLastPartOfId(valueOfJournalId);
-                    sbTemp.insert(0, "|");
-                    sbTemp.insert(0, lastPartOfJournalId);
-                    sbTemp.deleteCharAt(sbTemp.length() - 1);
-                    sbTemp.append("\n");
-                    queue.add(sbTemp.toString());
-                    count++;
-                    sourceStarted = false;
-                    primaryLocationStarted = false;
-                    if (count % 100_000 == 0) {
-                        System.out.print("count: " + count);
-                        System.out.print(", ");
-                        clock.printElapsedTime();
+                    if (keyName.equals("author")) {
+                        authorStarted = true;
                     }
-                }
-                if (authorStarted && keyName.equals("id")) {
-                    jsonParser.next();
-                    if (jsonParser.currentEvent() != Event.VALUE_STRING) {
-                        continue;
+                    if (keyName.equals("primary_location")) {
+                        primaryLocationStarted = true;
                     }
-                    String valueOfAuthorId = jsonParser.getString();
-                    String lastPartOfAuthorId = keepLastPartOfId(valueOfAuthorId);
-                    sbTemp.append(lastPartOfAuthorId);
-                    sbTemp.append(",");
-                    authorStarted = false;
+                    if (primaryLocationStarted && keyName.equals("source")) {
+                        sourceStarted = true;
+                    }
+                    if (sourceStarted && keyName.equals("id")) {
+                        jsonParser.next();
+                        if (jsonParser.currentEvent() != Event.VALUE_STRING) {
+                            continue;
+                        }
+                        String valueOfJournalId = jsonParser.getString();
+                        String lastPartOfJournalId = keepLastPartOfId(valueOfJournalId);
+                        sbTemp.insert(0, "|");
+                        sbTemp.insert(0, lastPartOfJournalId);
+                        sbTemp.deleteCharAt(sbTemp.length() - 1);
+                        sbTemp.append("\n");
+                        queue.add(sbTemp.toString());
+                        count++;
+                        sourceStarted = false;
+                        primaryLocationStarted = false;
+                        if (count % 100_000 == 0) {
+                            System.out.print("count: " + count);
+                            System.out.print(", ");
+                            clock.printElapsedTime();
+                        }
+                    }
+                    if (authorStarted && keyName.equals("id")) {
+                        jsonParser.next();
+                        if (jsonParser.currentEvent() != Event.VALUE_STRING) {
+                            continue;
+                        }
+                        String valueOfAuthorId = jsonParser.getString();
+                        String lastPartOfAuthorId = keepLastPartOfId(valueOfAuthorId);
+                        sbTemp.append(lastPartOfAuthorId);
+                        sbTemp.append(",");
+                        authorStarted = false;
+                    }
                 }
             }
-        }
         } catch (JsonParsingException exception) {
             System.out.println("location: " + jsonParser.getLocation().getStreamOffset());
             System.out.println("current valid line: " + sbTemp.toString());
         }
         queueProcessor.stop();
         queueProcessorThread.interrupt();
+        clock.closeAndPrintClock();
     }
 
     private String keepLastPartOfId(String fullId) {

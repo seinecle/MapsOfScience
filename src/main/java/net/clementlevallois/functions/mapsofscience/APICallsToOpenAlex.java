@@ -557,13 +557,13 @@ public class APICallsToOpenAlex {
         return "";
     }
 
-    public void getAllWorksPagedWithCursor() throws IOException, InterruptedException {
+    public void getAllWorksPagedWithCursor(String outputFileString) throws IOException, InterruptedException {
         Clock clock = new Clock("global clock");
         HttpClient client = HttpClient.newHttpClient();
 
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue();
         int writeToDiskIntervalInSeconds = 30;
-        JsonQueueProcessor queueProcessor = new JsonQueueProcessor(Path.of("all-works.json"), queue, writeToDiskIntervalInSeconds);
+        JsonQueueProcessor queueProcessor = new JsonQueueProcessor(Path.of(outputFileString), queue, writeToDiskIntervalInSeconds);
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
 
