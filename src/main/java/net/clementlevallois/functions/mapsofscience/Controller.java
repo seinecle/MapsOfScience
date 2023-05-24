@@ -32,6 +32,7 @@ public class Controller {
         
 
         /**
+         * Adds a couple of characters to the 65Gb file to make sure it is a compliant json file.
          * Almost instantaneous operation.
          */
 //        ProcessingWorks processingWorks = new ProcessingWorks();
@@ -39,6 +40,7 @@ public class Controller {
 
 
         /**
+         * Filters the json file to retain only what we need: journal ids and author ids.
          * Takes approx 10 minutes for 20 million works, which is a 65Gb file.
          * Returns a file of 1.2Gb approx.
          */
@@ -46,6 +48,8 @@ public class Controller {
 //        parser.parseJournalIdsAndAuthorIds(worksWellFormatted, journalsAndAuthorsPerWork);
 
         /**
+         * Reorganizes journal ids and author ids to end up with:
+         * for each line, a journal id followed by all author ids who have published in it.
          * Takes 3 to 10 minutes and needs 4GB of max heap size (add a -Xmx4g paramater in the command line launching the java program).
          * Produces a file close to 1Gb in size.
          */
