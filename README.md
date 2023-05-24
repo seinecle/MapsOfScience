@@ -2,6 +2,11 @@
 This repository provides methods to produce maps of science from open access data.
 The end goal is to make it possible and easy to produce these maps.
 
+# Where is the entry point to the code?
+I use [this class](https://github.com/seinecle/MapsOfScience/blob/main/src/main/java/net/clementlevallois/functions/mapsofscience/Controller.java) as the launcher of all operations.
+
+When I'll be finished creating maps, I'll revise the code to make it extremely easy to use from a commandline interface and in a nocode fashion from a web app (https://nocodefunctions.com). Anyone should then be able to create maps for themselves.
+
 ## Maps of science
 Pioneering work on maps of science dates back to the 2000s with the first global atlases produced by [Katy Börner, Kevin Boyack, Richard Klavans](https://link.springer.com/article/10.1007/s11192-005-0255-6), [Loet Leydesdorff and Ismael Rafols](https://asistdl.onlinelibrary.wiley.com/doi/abs/10.1002/asi.20967).
 
@@ -31,9 +36,9 @@ This is the reason for this project. Today, thanks to the [OpenAlex foundation](
 ## Are you going to create maps exactly like they were produced before?
 Yes and no.
 
-Yes: I'll start by building maps of journals, so pretty much the principle followed by the pionneers.
+Yes: I'll start by building maps of journals, so pretty much the principle followed by the pioneers.
 
-No: maps of journals were built by measuring the similarity of journals based on citations. This is pretty data intensive, to say the least. But there was no clear alternative. Today, thanks to another great initiative ([ORCID](https://orcid.org/)), we have unique identifiers for a large number of authors. This provides a rich information to evaluate if two journals relate to each other: 2 journals can be said to be be similar if a number of authors published in both. I expect it to be much less data intensive than citation-based approaches. As a consequence, it should lower considerably the complexity of the resources needed to build the maps: I aim to **design methods that allow to create maps by using a regular laptop, not an expensive cloud computing infrastructure**.
+No: maps of journals were built by measuring the similarity of journals based on citations. This is pretty data intensive, to say the least. But there was no clear alternative. Today, thanks to another great initiative ([ORCID](https://orcid.org/)), we have unique identifiers for a large number of authors. This provides a rich information to evaluate if two journals relate to each other: 2 journals can be said to be similar if a number of authors published in both. I expect it to be much less data intensive than citation-based approaches. As a consequence, it should lower considerably the complexity of the resources needed to build the maps: I aim to **design methods that allow to create maps by using a regular laptop, not an expensive cloud computing infrastructure**.
 
 
 
