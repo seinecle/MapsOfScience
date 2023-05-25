@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -118,7 +119,7 @@ public class CreateListOfJournalsWithTheirAuthors {
         journal2AuthorsMap.put(journalIdAsLong, setOfAuthorsForThisJournal);
     }
 
-    private void writeMapToFile(String outputFileString) {
+    private void writeMapToFile(String outputFileString) throws IOException {
         Path result = Path.of(outputFileString);
         Clock clock = new Clock("writing map to file");
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue();

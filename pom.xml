@@ -4,7 +4,6 @@
     <groupId>net.clementlevallois.functions</groupId>
     <artifactId>maps-of-science-core</artifactId>
     <version>0.10</version>
-    
     <dependencies>
         <dependency>
             <groupId>jakarta.json</groupId>
@@ -53,11 +52,20 @@
         </dependency>
     </dependencies>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>19</maven.compiler.source>
+        <maven.compiler.target>19</maven.compiler.target>
     </properties>
     <build>
-        <plugins>
+        <plugins> 
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
             <plugin>
                 <!-- Build an executable JAR -->
                 <groupId>org.apache.maven.plugins</groupId>
