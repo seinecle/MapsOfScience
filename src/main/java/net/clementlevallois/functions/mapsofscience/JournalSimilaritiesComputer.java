@@ -4,11 +4,6 @@
  */
 package net.clementlevallois.functions.mapsofscience;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.ints.IntSets;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.FastEntrySet;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -17,15 +12,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Spliterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import net.clementlevallois.utils.Clock;
 
 /**
@@ -35,8 +25,6 @@ import net.clementlevallois.utils.Clock;
 public class JournalSimilaritiesComputer {
 
     static Long2ObjectOpenHashMap<ObjectOpenHashSet<Long>> journal2AuthorsMap = new Long2ObjectOpenHashMap<>();
-    static IntOpenHashSet pairsAlreadyChecked = new IntOpenHashSet();
-    static IntSet synchronizedSet = IntSets.synchronize(pairsAlreadyChecked);
 
     static String journalIdsAndAuthorIds = "data/sample-journals-and-authors.txt";
 //    static String journalIdsAndAuthorIds = "data/tiny-test.txt";
@@ -44,18 +32,13 @@ public class JournalSimilaritiesComputer {
 
     static long maxSize = 4_000;
 
-    public enum Speedup {
-        VIRTUAL_THEADS, PARALELL_STREAMS
-    }
-
     public static void main(String[] args) throws IOException, InterruptedException {
         JournalSimilaritiesComputer computer = new JournalSimilaritiesComputer();
         computer.loadDataToMap(maxSize);
         System.out.println("number of entries in the map: " + journal2AuthorsMap.size());
 
-        Speedup speedup = Speedup.PARALELL_STREAMS;
         Files.deleteIfExists(Path.of(resultSimilarities));
-        computer.doubleLoopingThroughJournalIds(speedup);
+        computer.doubleLoopingThroughJournalIds();
     }
 
     private void loadDataToMap(long maxSize) throws IOException {
@@ -67,7 +50,7 @@ public class JournalSimilaritiesComputer {
         });
     }
 
-    private void doubleLoopingThroughJournalIds(Speedup speedup) throws IOException, InterruptedException {
+    private void doubleLoopingThroughJournalIds() throws IOException, InterruptedException {
         Path result = Path.of(resultSimilarities);
         Clock clock = new Clock("computing similarities");
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue();
@@ -76,94 +59,29 @@ public class JournalSimilaritiesComputer {
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
 
-        FastEntrySet<ObjectOpenHashSet<Long>> entries = journal2AuthorsMap.long2ObjectEntrySet();
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-        if (speedup == Speedup.VIRTUAL_THEADS) {
-            System.out.println("speedup method is VIRTUAL THREADS");
+        LongSet setOfJournalIds = journal2AuthorsMap.keySet();
+        long[] arrayOfJournalIds = setOfJournalIds.toLongArray();
 
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-
-            for (Long2ObjectMap.Entry<ObjectOpenHashSet<Long>> entryA : entries) {
-                long journalIdA = entryA.getLongKey();
-                ObjectOpenHashSet<Long> authorsA = entryA.getValue();
-                String jA = String.valueOf(journalIdA);
-                for (Long2ObjectMap.Entry<ObjectOpenHashSet<Long>> entryB : entries) {
-                    long journalIdB = entryB.getLongKey();
-                    ObjectOpenHashSet<Long> authorsB = entryB.getValue();
-                    if (alreadyExamined(jA, journalIdA, journalIdB)) {
-                        continue;
+        IntStream.range(0, arrayOfJournalIds.length).parallel().forEach(indexJournalA -> {
+            long journalIdA = arrayOfJournalIds[indexJournalA];
+            ObjectOpenHashSet<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
+            IntStream.range(0, arrayOfJournalIds.length).parallel().skip(indexJournalA + 1).forEach(indexJournalB -> {
+                long journalIdB = arrayOfJournalIds[indexJournalB];
+                executor.execute(() -> {
+                    int similarity = computeSimilarities(authorsA, journal2AuthorsMap.get(journalIdB));
+                    if (similarity > 0) {
+                        String sim = journalIdA + "," + journalIdB + "," + similarity + "\n";
+                        queue.add(sim);
                     }
-                    executor.submit(() -> {
-                        int similarity = computeSimilarities(authorsA, authorsB);
-                        if (similarity > 0) {
-                            String sim = journalIdA + "," + journalIdB + "," + similarity + "\n";
-                            queue.add(sim);
-                        }
-                    });
-                }
-            }
-            executor.shutdown();
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        }
-
-        if (speedup == Speedup.PARALELL_STREAMS) {
-            System.out.println("speedup method is PARALLEL STREAMS");
-
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-
-            LongSet setOfJournalIds = journal2AuthorsMap.keySet();
-            long[] arrayOfJournalIds = setOfJournalIds.toLongArray();
-
-            IntStream.range(0, arrayOfJournalIds.length).parallel().forEach(indexJournalA -> {
-                long journalIdA = arrayOfJournalIds[indexJournalA];
-                ObjectOpenHashSet<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
-                IntStream.range(0, arrayOfJournalIds.length).parallel().skip(indexJournalA + 1).forEach(indexJournalB -> {
-                    long journalIdB = arrayOfJournalIds[indexJournalB];
-                    executor.execute(() -> {
-                        int similarity = computeSimilarities(authorsA, journal2AuthorsMap.get(journalIdB));
-                        if (similarity > 0) {
-                            String sim = journalIdA + "," + journalIdB + "," + similarity + "\n";
-                            queue.add(sim);
-                        }
-                    });
-
-//                    Future<String> submit = executor.submit(() -> {
-//                        int similarity = computeSimilarities(authorsA, journal2AuthorsMap.get(journalIdB));
-//                        if (similarity > 0) {
-//                            String sim = journalIdA + "," + journalIdB + "," + similarity + "\n";
-//                            return sim;
-//                        }
-//                        return "";
-//                    });
-//                    queueFuture.add(submit);
                 });
+
             });
-        }
+        });
 
         queueProcessor.stop();
         clock.closeAndPrintClock();
-    }
-
-    private boolean alreadyExamined(String jA, long journalIdA, long journalIdB) {
-        if (journalIdA == journalIdB) {
-            return true;
-        }
-        String jB = String.valueOf(journalIdB);
-
-        if (journalIdA < journalIdB) {
-            int hash = (jA + jB).hashCode();
-            if (synchronizedSet.contains(hash)) {
-                return true;
-            }
-            synchronizedSet.add(hash);
-        } else {
-            int hash = (jB + jA).hashCode();
-            if (synchronizedSet.contains(hash)) {
-                return true;
-            }
-            synchronizedSet.add(hash);
-        }
-        return false;
     }
 
     private int computeSimilarities(ObjectOpenHashSet<Long> authorsOfJournalA, ObjectOpenHashSet<Long> authorsOfJournalB) {
