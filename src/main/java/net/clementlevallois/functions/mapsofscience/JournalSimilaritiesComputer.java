@@ -4,14 +4,16 @@
  */
 package net.clementlevallois.functions.mapsofscience;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +26,7 @@ import net.clementlevallois.utils.Clock;
  */
 public class JournalSimilaritiesComputer {
 
-    static Long2ObjectOpenHashMap<ObjectOpenHashSet<Long>> journal2AuthorsMap = new Long2ObjectOpenHashMap<>();
+    static Long2ObjectMap<ObjectLinkedOpenHashSet<Long>> journal2AuthorsMap = new Long2ObjectOpenHashMap();
 
     static String journalIdsAndAuthorIds = "data/sample-journals-and-authors.txt";
 //    static String journalIdsAndAuthorIds = "data/tiny-test.txt";
@@ -66,8 +68,8 @@ public class JournalSimilaritiesComputer {
 
         IntStream.range(0, arrayOfJournalIds.length).parallel().forEach(indexJournalA -> {
             long journalIdA = arrayOfJournalIds[indexJournalA];
-            ObjectOpenHashSet<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
-            IntStream.range(0, arrayOfJournalIds.length).parallel().skip(indexJournalA + 1).forEach(indexJournalB -> {
+            ObjectLinkedOpenHashSet<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
+            IntStream.range(indexJournalA + 1, arrayOfJournalIds.length).parallel().forEach(indexJournalB -> {
                 long journalIdB = arrayOfJournalIds[indexJournalB];
                 executor.execute(() -> {
                     int similarity = computeSimilarities(authorsA, journal2AuthorsMap.get(journalIdB));
@@ -84,7 +86,7 @@ public class JournalSimilaritiesComputer {
         clock.closeAndPrintClock();
     }
 
-    private int computeSimilarities(ObjectOpenHashSet<Long> authorsOfJournalA, ObjectOpenHashSet<Long> authorsOfJournalB) {
+    private int computeSimilarities(ObjectLinkedOpenHashSet<Long> authorsOfJournalA, ObjectLinkedOpenHashSet<Long> authorsOfJournalB) {
         int counterSimilarity = 0;
         if (authorsOfJournalA.size() < authorsOfJournalB.size()) {
             ObjectIterator<Long> iteratorA = authorsOfJournalA.iterator();
@@ -113,8 +115,8 @@ public class JournalSimilaritiesComputer {
         long journalIdAsLong = Long.parseLong(journalId);
         String authorIdsAsLine = fields[1];
         String authorIds[] = authorIdsAsLine.split(Constants.INTRA_FIELD_SEPARATOR);
-        ObjectOpenHashSet<Long> setOfCurrentAuthors = new ObjectOpenHashSet();
-        ObjectOpenHashSet<Long> setOfAuthorsForThisJournal = journal2AuthorsMap.getOrDefault(journalIdAsLong, setOfCurrentAuthors);
+        ObjectLinkedOpenHashSet<Long> setOfCurrentAuthors = new ObjectLinkedOpenHashSet();
+        ObjectLinkedOpenHashSet<Long> setOfAuthorsForThisJournal = journal2AuthorsMap.getOrDefault(journalIdAsLong, setOfCurrentAuthors);
         for (String authorId : authorIds) {
             try {
                 long authorIdLong = Long.parseLong(authorId);
