@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package net.clementlevallois.functions.mapsofscience;
+package net.clementlevallois.functions.mapsofscience.queueprocessors;
 
 /**
  *
@@ -17,13 +17,11 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class StringQueueProcessor implements Runnable {
 
-    private static final int MAX_BYTES_PER_WRITE = 1024 * 1024; // 1 MB
-    private static Duration FLUSH_INTERVAL = Duration.ofSeconds(10);
+    private static final int MAX_BYTES_PER_WRITE = 1024 * 1024 * 20; // 20 MB
+    private static Duration FLUSH_INTERVAL = Duration.ofMillis(500);
 
     private final Path outputFilePath;
     private final ConcurrentLinkedQueue<String> stringQueue;
@@ -71,6 +69,7 @@ public class StringQueueProcessor implements Runnable {
                     lastFlushTime = now;
                 }
             }
+            outputChannel.force(true);
             outputChannel.close();
             Thread.currentThread().interrupt();
         } catch (IOException | InterruptedException ex) {

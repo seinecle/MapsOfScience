@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package net.clementlevallois.functions.mapsofscience;
+package net.clementlevallois.functions.mapsofscience.queueprocessors;
 
 /**
  *
@@ -20,34 +20,32 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class JsonQueueProcessor implements Runnable {
 
-    private static final int MAX_BYTES_PER_WRITE = 1024 * 1024; // 1 MB
-    private static Duration FLUSH_INTERVAL = Duration.ofSeconds(30);
+    private static final int MAX_BYTES_PER_WRITE = 1024 * 1024 * 20; // 20 MB
+    private static Duration FLUSH_INTERVAL = Duration.ofMillis(500);
+
+    private boolean operationsRunning;
 
     private final Path outputFilePath;
     private final ConcurrentLinkedQueue<String> jsonQueue;
-    private boolean apiCallsRunning = true;
 
     public JsonQueueProcessor(Path outputFilePath, ConcurrentLinkedQueue<String> jsonQueue, int flushIntervalInSeconds) {
         this.outputFilePath = outputFilePath;
         this.jsonQueue = jsonQueue;
         FLUSH_INTERVAL = Duration.ofSeconds(flushIntervalInSeconds);
+        operationsRunning = true;
     }
 
     public void stop() {
-        apiCallsRunning = false;
+        operationsRunning = false;
     }
 
     @Override
     public void run() {
         Instant lastFlushTime = Instant.now();
         try (FileChannel outputChannel = FileChannel.open(outputFilePath,
-                StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.APPEND)) {
-            ByteBuffer buf = ByteBuffer.allocate(1024);
-            buf.putChar('[');
-            outputChannel.write(buf);
-            while (apiCallsRunning) {
+            while (operationsRunning || !jsonQueue.isEmpty()) {
                 String json = jsonQueue.poll();
                 if (json == null) {
                     // No more items in the queue, sleep for a bit before checking again
@@ -70,8 +68,10 @@ public class JsonQueueProcessor implements Runnable {
                     lastFlushTime = now;
                 }
             }
+            Thread.currentThread().interrupt();
+
         } catch (IOException | InterruptedException e) {
-            // Handle exceptions as appropriate for your application
+            System.out.println("io exception while writing json to disk");
         }
     }
 }

@@ -3,6 +3,7 @@
  */
 package net.clementlevallois.functions.mapsofscience;
 
+import net.clementlevallois.functions.mapsofscience.queueprocessors.JsonQueueProcessor;
 import io.mikael.urlbuilder.UrlBuilder;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -57,16 +58,23 @@ public class APICallsToOpenAlex {
     private final String WITHIN_FIELD_SEPARATOR = "===";
     private final String REPLACEMENT_CHAR_FOR_SANITIZATION = "-";
 
+    private boolean testOnSmallSample = false;
+
     public static void main(String[] args) throws IOException, InterruptedException {
-        APICallsToOpenAlex mos = new APICallsToOpenAlex();
+        boolean testOnSmallSample = false;
+        APICallsToOpenAlex mos = new APICallsToOpenAlex(testOnSmallSample);
 
 //        mos.getAllJournalsFromAllAuthors();
-//        mos.getJournalsCount();
+        mos.getJournalsCount();
 //        mos.getAuthorsCount();
-        mos.getWorksCount();
+//        mos.getWorksCount();
 //        mos.getAllWorksPagedWithCursor();
 //        mos.getAllAuthorsPagedWithCursor();
 //        mos.getAllJournalsPagedWithCursor();
+    }
+
+    public APICallsToOpenAlex(boolean testOnSmallSample) {
+        this.testOnSmallSample = testOnSmallSample;
     }
 
     private void getJournalsCount() throws IOException, InterruptedException {
@@ -75,7 +83,7 @@ public class APICallsToOpenAlex {
                 .withScheme("https")
                 .withHost("api.openalex.org")
                 .withPath("sources")
-                .addParameter("filter", "type:journal,works_count:>50")
+                .addParameter("filter", "type:journal")
                 .addParameter("select", "id,display_name")
                 .addParameter("mailto", "analysis@exploreyourdata.com")
                 .toUri();
@@ -90,8 +98,8 @@ public class APICallsToOpenAlex {
             String bodyString = response.body();
             try (JsonReader reader = Json.createReader(new StringReader(bodyString))) {
                 JsonObject jsonObjectReturned = reader.readObject();
-                totalCountWorks = jsonObjectReturned.getJsonObject("meta").getInt("count");
-                System.out.println("total number of works in OpenAlex: " + totalCountWorks);
+                totalCountJournals = jsonObjectReturned.getJsonObject("meta").getInt("count");
+                System.out.println("total number of journals in OpenAlex: " + totalCountJournals);
             }
         } else {
             System.out.println("error when retrieving initial count of journals");
@@ -571,12 +579,15 @@ public class APICallsToOpenAlex {
 
         String cursor = "*";
         while (!cursor.equals("done")) {
+            if (testOnSmallSample && currPageIndex > 5) {
+                return;
+            }
             URI uri = UrlBuilder
                     .empty()
                     .withScheme("https")
                     .withHost("api.openalex.org")
                     .withPath("works")
-                    .addParameter("filter", "publication_year:>2014,cited_by_count:>0,type:journal-article")
+                    .addParameter("filter", "publication_year:>2015,cited_by_count:>0,type:journal-article")
                     .addParameter("select", "authorships, primary_location")
                     .addParameter("per-page", String.valueOf(PAGE_SIZE))
                     .addParameter("cursor", cursor)
@@ -592,7 +603,7 @@ public class APICallsToOpenAlex {
                     String bodyString = response.body();
                     try (JsonReader reader = Json.createReader(new StringReader(bodyString))) {
                         JsonObject jsonObjectReturned = reader.readObject();
-                        cursor = jsonObjectReturned.getJsonObject("meta").getString("next_cursor","done");
+                        cursor = jsonObjectReturned.getJsonObject("meta").getString("next_cursor", "done");
                         JsonArray jsonArrayResults = jsonObjectReturned.getJsonArray("results");
                         Iterator<JsonValue> iteratorResults = jsonArrayResults.iterator();
                         while (iteratorResults.hasNext()) {
@@ -618,7 +629,6 @@ public class APICallsToOpenAlex {
         }
 
         queueProcessor.stop();
-        queueProcessorThread.interrupt();
 
         clock.closeAndPrintClock();
     }

@@ -4,6 +4,7 @@
  */
 package net.clementlevallois.functions.mapsofscience;
 
+import net.clementlevallois.functions.mapsofscience.queueprocessors.StringQueueProcessor;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParser.Event;
@@ -15,8 +16,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import net.clementlevallois.utils.Clock;
 
@@ -38,7 +37,7 @@ public class JsonStreamingParser {
         Path result = Path.of(pathResultString);
         Clock clock = new Clock("general clock");
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue();
-        int writeToDiskIntervalInSeconds = 5;
+        int writeToDiskIntervalInSeconds = 1;
         StringQueueProcessor queueProcessor = new StringQueueProcessor(result, queue, writeToDiskIntervalInSeconds);
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
@@ -81,6 +80,12 @@ public class JsonStreamingParser {
                         }
                         String valueOfJournalId = jsonParser.getString();
                         String lastPartOfJournalId = keepLastPartOfId(valueOfJournalId);
+                        try{
+                            long parsedLong = Long.parseLong(lastPartOfJournalId);
+                        } catch (NumberFormatException ex){
+                            System.out.println("error with journal id "+ lastPartOfJournalId);
+                            continue;
+                        }
                         sbTemp.insert(0, "|");
                         sbTemp.insert(0, lastPartOfJournalId);
                         sbTemp.deleteCharAt(sbTemp.length() - 1);
@@ -102,6 +107,12 @@ public class JsonStreamingParser {
                         }
                         String valueOfAuthorId = jsonParser.getString();
                         String lastPartOfAuthorId = keepLastPartOfId(valueOfAuthorId);
+                        try{
+                            long parsedLong = Long.parseLong(lastPartOfAuthorId);
+                        } catch (NumberFormatException ex){
+                            System.out.println("error with author id "+ lastPartOfAuthorId);
+                            continue;
+                        }
                         sbTemp.append(lastPartOfAuthorId);
                         sbTemp.append(",");
                         authorStarted = false;

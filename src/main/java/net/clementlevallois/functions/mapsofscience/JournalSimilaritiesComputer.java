@@ -4,19 +4,21 @@
  */
 package net.clementlevallois.functions.mapsofscience;
 
+import net.clementlevallois.functions.mapsofscience.queueprocessors.StringQueueProcessor;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.clementlevallois.utils.Clock;
 
@@ -28,11 +30,11 @@ public class JournalSimilaritiesComputer {
 
     static Long2ObjectMap<ObjectLinkedOpenHashSet<Long>> journal2AuthorsMap = new Long2ObjectOpenHashMap();
 
-    static String journalIdsAndAuthorIds = "data/sample-journals-and-authors.txt";
+    static String journalIdsAndAuthorIds = "data/all-journals-and-their-authors.txt";
 //    static String journalIdsAndAuthorIds = "data/tiny-test.txt";
     static String resultSimilarities = "data/similarities.txt";
 
-    static long maxSize = 4_000;
+    static long maxSize = Long.MAX_VALUE;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         JournalSimilaritiesComputer computer = new JournalSimilaritiesComputer();
@@ -44,12 +46,14 @@ public class JournalSimilaritiesComputer {
     }
 
     private void loadDataToMap(long maxSize) throws IOException {
+        Clock clock = new Clock("loading file");
         Path inputFilePath = Path.of(journalIdsAndAuthorIds);
         List<String> lines = Files.readAllLines(inputFilePath);
 
         lines.stream().limit(maxSize).forEach(line -> {
             processLine(line);
         });
+        clock.closeAndPrintClock();
     }
 
     private void doubleLoopingThroughJournalIds() throws IOException, InterruptedException {
@@ -68,7 +72,7 @@ public class JournalSimilaritiesComputer {
 
         IntStream.range(0, arrayOfJournalIds.length).parallel().forEach(indexJournalA -> {
             long journalIdA = arrayOfJournalIds[indexJournalA];
-            ObjectLinkedOpenHashSet<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
+            Set<Long> authorsA = journal2AuthorsMap.get(arrayOfJournalIds[indexJournalA]);
             IntStream.range(indexJournalA + 1, arrayOfJournalIds.length).parallel().forEach(indexJournalB -> {
                 long journalIdB = arrayOfJournalIds[indexJournalB];
                 executor.execute(() -> {
@@ -81,22 +85,25 @@ public class JournalSimilaritiesComputer {
 
             });
         });
+        executor.shutdown();
+        //Awaits either 10 minutes or if all tasks are completed. Whatever is first. I don't know whats a reasonable await time.
+        executor.awaitTermination(1L, TimeUnit.MINUTES);
 
         queueProcessor.stop();
         clock.closeAndPrintClock();
     }
 
-    private int computeSimilarities(ObjectLinkedOpenHashSet<Long> authorsOfJournalA, ObjectLinkedOpenHashSet<Long> authorsOfJournalB) {
+    private int computeSimilarities(Set<Long> authorsOfJournalA, Set<Long> authorsOfJournalB) {
         int counterSimilarity = 0;
         if (authorsOfJournalA.size() < authorsOfJournalB.size()) {
-            ObjectIterator<Long> iteratorA = authorsOfJournalA.iterator();
+            Iterator<Long> iteratorA = authorsOfJournalA.iterator();
             while (iteratorA.hasNext()) {
                 if (authorsOfJournalB.contains(iteratorA.next())) {
                     counterSimilarity++;
                 }
             }
         } else {
-            ObjectIterator<Long> iteratorB = authorsOfJournalB.iterator();
+            Iterator<Long> iteratorB = authorsOfJournalB.iterator();
             while (iteratorB.hasNext()) {
                 if (authorsOfJournalA.contains(iteratorB.next())) {
                     counterSimilarity++;

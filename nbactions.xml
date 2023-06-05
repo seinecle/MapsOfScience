@@ -12,7 +12,7 @@
             <properties>
                 <exec.vmArgs>--enable-preview</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>-Xmx4g</exec.appArgs>
+                <exec.appArgs>-Xms16g -Xmx28g</exec.appArgs>
                 <exec.mainClass>net.clementlevallois.functions.mapsofscience.JournalSimilaritiesComputer</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -29,7 +29,7 @@
             <properties>
                 <exec.vmArgs>--enable-preview -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>-Xmx4g</exec.appArgs>
+                <exec.appArgs>-Xms16g -Xmx28g</exec.appArgs>
                 <exec.mainClass>net.clementlevallois.functions.mapsofscience.JournalSimilaritiesComputer</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
@@ -49,7 +49,7 @@
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>net.clementlevallois.functions.mapsofscience.JournalSimilaritiesComputer</exec.mainClass>
                 <exec.executable>java</exec.executable>
-                <exec.appArgs>-Xmx4g</exec.appArgs>
+                <exec.appArgs>-Xms16g -Xmx28g</exec.appArgs>
             </properties>
         </action>
         <action>
@@ -80,7 +80,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.1.0:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs></exec.vmArgs>
+                <exec.vmArgs>-Xms16g -Xmx28g</exec.vmArgs>
                 <exec.args>--enable-preview ${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.mainClass>${packageClassName}</exec.mainClass>

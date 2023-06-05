@@ -2,13 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package net.clementlevallois.functions.mapsofscience;
+package net.clementlevallois.functions.mapsofscience.debug;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import static net.clementlevallois.functions.mapsofscience.JournalSimilaritiesComputer.journal2AuthorsMap;
 
 /**
  *
