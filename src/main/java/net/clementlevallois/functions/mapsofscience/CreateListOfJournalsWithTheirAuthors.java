@@ -35,19 +35,26 @@ public class CreateListOfJournalsWithTheirAuthors {
     public static void main(String[] args) throws Exception {
         String journalAndAuthorsPerWorkFilePath = "data/journal-and-authors-per-work.txt";
         String outputFileString = "data/all-journals-and-their-authors.txt";
+//        String outputFileString = "data/sample-journals-and-authors.txt";
         String journalIdFileString = "data/journal-id-mapping.txt";
         String authorIdFileString = "data/author-id-mapping.txt";
         CreateListOfJournalsWithTheirAuthors create = new CreateListOfJournalsWithTheirAuthors();
-        create.doAllOps(journalAndAuthorsPerWorkFilePath, outputFileString, journalIdFileString, authorIdFileString);
+//        create.doAllOps(journalAndAuthorsPerWorkFilePath, outputFileString, journalIdFileString, authorIdFileString);
+        create.createJournalAndAuthorIdMaps(outputFileString, journalIdFileString, authorIdFileString);
     }
 
     public void doAllOps(String journalAndAuthorsPerWorkFilePath, String outputFileString, String journalIdFileString, String authorIdFileString) throws Exception {
-        readLinesFromFileAndPopulateMap(journalAndAuthorsPerWorkFilePath);
+        loadJournalsAndTheirAuthorsIntoAMap(journalAndAuthorsPerWorkFilePath);
         writeMapToFile(outputFileString);
         mapIdsToSequentialIds(journalIdFileString, authorIdFileString);
     }
 
-    private void readLinesFromFileAndPopulateMap(String filePath) throws Exception {
+    public void createJournalAndAuthorIdMaps(String journalAndAuthorsFilePath, String journalIdFileString, String authorIdFileString) throws Exception {
+        loadJournalsAndTheirAuthorsIntoAMap(journalAndAuthorsFilePath);
+        mapIdsToSequentialIds(journalIdFileString, authorIdFileString);
+    }
+
+    private void loadJournalsAndTheirAuthorsIntoAMap(String filePath) throws Exception {
         Clock clock = new Clock("loading file to map");
         // Open the file using RandomAccessFile and FileChannel
         File file = new File(filePath);
@@ -117,11 +124,12 @@ public class CreateListOfJournalsWithTheirAuthors {
             ObjectLinkedOpenHashSet<Long> setOfCurrentAuthors = new ObjectLinkedOpenHashSet();
             ObjectLinkedOpenHashSet<Long> setOfAuthorsForThisJournal = journal2AuthorsMap.getOrDefault(journalIdAsLong, setOfCurrentAuthors);
             for (String authorId : authorIds) {
+                authorId = authorId.trim();
                 try {
                     long authorIdLong = Long.parseLong(authorId);
                     setOfAuthorsForThisJournal.add(authorIdLong);
                 } catch (NumberFormatException e) {
-                    System.out.println("error with author id, not  long: " + authorId);
+                    System.out.println("error with author id, not  long: \"" + authorId + "\"");
                 }
             }
             journal2AuthorsMap.put(journalIdAsLong, setOfAuthorsForThisJournal);

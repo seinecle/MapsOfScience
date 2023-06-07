@@ -30,7 +30,7 @@ public class JournalSimilaritiesComputer {
 
     static Long2ObjectMap<ObjectLinkedOpenHashSet<Long>> journal2AuthorsMap = new Long2ObjectOpenHashMap();
 
-    static String journalIdsAndAuthorIds = "data/all-journals-and-their-authors.txt";
+    static String journalIdsAndAuthorIds = "data/sample-journals-and-authors.txt";
 //    static String journalIdsAndAuthorIds = "data/tiny-test.txt";
     static String resultSimilarities = "data/similarities.txt";
 

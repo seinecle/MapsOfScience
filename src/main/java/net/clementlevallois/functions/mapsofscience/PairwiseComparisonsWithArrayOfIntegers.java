@@ -9,13 +9,15 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.clementlevallois.utils.Clock;
 
 /**
@@ -27,39 +29,35 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     static Path pathJournalIdMapping = Path.of("data/journal-id-mapping.txt");
     static Path pathAuthorIdMapping = Path.of("data/author-id-mapping.txt");
     static Path pathJournalsToAuthors = Path.of("data/all-journals-and-their-authors.txt");
-    static Path pathSimilarities = Path.of("data/similarities.txt");
+    static Path pathSimilarities = Path.of("data/similarities-with-integers.csv");
     static Long2IntOpenHashMap mapJournals = new Long2IntOpenHashMap();
     static Long2IntOpenHashMap mapAuthors = new Long2IntOpenHashMap();
 
     static int[] data;
-    static int[] firsts;
+    static int[] journals;
 
     // method suggested by reddit user Ivory2Much:
-    
     // https://www.reddit.com/r/java/comments/13rlb26/speeding_up_pairwise_comparisons_to_28_millionsec/
-    
-    
     public static void main(String args[]) throws IOException, InterruptedException, ExecutionException {
         boolean testInMain = false;
         loadJournalAndAuthorIds();
         createBigIntegerArray();
         if (testInMain) {
             data = new int[]{0, 3, 0, 5, 50, 1, 3, 2, 3, 5, 2, 5, 3, 6, 49, 50, 97, 3, 2, 30, 230};
-            firsts = new int[]{0, 5, 10, 17};
+            journals = new int[]{0, 5, 10, 17};
         }
         computeSimilarities(testInMain, pathSimilarities);
     }
 
     public static void loadJournalAndAuthorIds() throws IOException {
-        
+
         /*
         
         This method loads in memory what we had stored in files in the previous operations:
         - the mapping of journal "original long ids" to their new integer ids indexed at zero, which are lighter to manipulate
         - same for author ids
         
-        */
-        
+         */
         Clock clock = new Clock("loading journal and author ids");
         List<String> allJournals = Files.readAllLines(pathJournalIdMapping);
         for (String string : allJournals) {
@@ -88,9 +86,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         
         Double looping is still involved but all other computing costs are diminished to a minimum.
         
-        */
-
-
+         */
         Clock clock = new Clock("measuring the length of the array we need");
         List<String> allJournalsAndTheirAuthors = Files.readAllLines(pathJournalsToAuthors);
 
@@ -104,22 +100,48 @@ public class PairwiseComparisonsWithArrayOfIntegers {
 
         clock = new Clock("initiating and filling the array");
         data = new int[count];
-        
+
         // this "firsts" array is a convenience array which stores the indices of all journals in the data[] array.
         // useful later to iterate through journals in the outer loop
-        
-        firsts = new int[mapJournals.size()];
+        journals = new int[mapJournals.size()];
         int i = 0;
         int countJournals = 0;
         for (String string : allJournalsAndTheirAuthors) {
-            String[] split = string.split("[\\" + Constants.INTER_FIELD_SEPARATOR + Constants.INTRA_FIELD_SEPARATOR + "]");
-            int journalId = mapJournals.get(Long.parseLong(split[0]));
-            firsts[countJournals++] = i;
+
+            // to recall, each line is in the form:
+            // 45645464|54564561516,155161616516,
+            // where the first element is the journal id, then a pipe character, then a comma-separated list of author ids.
+            String[] elements = string.split("\\" + Constants.INTER_FIELD_SEPARATOR);
+            String journalIdAsString = elements[0];
+            String[] authorIdsAsString = elements[1].split(Constants.INTRA_FIELD_SEPARATOR);
+            int journalId = mapJournals.get(Long.parseLong(journalIdAsString));
+
+            // adding the index of the journal in the data array to a convenience array
+            journals[countJournals++] = i;
+
+            // adding the journal id to the array of ints
             data[i++] = journalId;
-            data[i++] = split.length - 1;
-            for (int j = 1; j < split.length; j++) {
-                int authorId = mapAuthors.get(Long.parseLong(split[j]));
-                data[i++] = authorId;
+
+            // adding the number of authors to the array of ints
+            // it is conveniently represented by the size of the array containing all author ids
+            data[i++] = authorIdsAsString.length;
+
+            // now we need to insert the list of all author ids in the int array, SORTED ASCENDING.
+            // as they as stored as Longs represented in Strings,
+            // we need to convert the Strings to Longs, then retrieve their int equivalent,
+            // then sort the ints ascendingly before inserted them in the array! Phew.
+            // the sublist thing is to remove the journal id, which is the first element of the array
+            List<String> authorsAsStrings = Arrays.asList(authorIdsAsString);
+            List<Integer> authorsAsIntegers = new ArrayList(authorsAsStrings.size());
+            for (String authorIdAsString : authorsAsStrings) {
+                long authorIdAsLong = Long.parseLong(authorIdAsString);
+                int authorIdAsInteger = mapAuthors.get(authorIdAsLong);
+                authorsAsIntegers.add(authorIdAsInteger);
+            }
+            // Sort the List using Collections.sort()
+            Collections.sort(authorsAsIntegers);
+            for (int authorIdAsInteger : authorsAsIntegers) {
+                data[i++] = authorIdAsInteger;
             }
         }
         clock.closeAndPrintClock();
@@ -133,18 +155,20 @@ public class PairwiseComparisonsWithArrayOfIntegers {
 
         // this class is helpful to retrieve, and write to file the pairs of journals that do have a non zero similarity,
         // all while interrupting the least possible the computations on similartiies
-
         ArraysOfIntegerQueueProcessor queueProcessor = new ArraysOfIntegerQueueProcessor(result, queue, writeToDiskIntervalInSeconds);
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
-        AtomicInteger next = new AtomicInteger(0);
-        int n;
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+        int indexOfFirstJournalInJournals = 0;
+        Runnable runnableTask;
         // we iterate through all journals
-        while ((n = next.getAndIncrement()) < firsts.length) {
-            int first = firsts[n];
-            Runnable runnableTask = () -> {
+
+        while (indexOfFirstJournalInJournals < journals.length) {
+            int indexFirstJournalInDataArray = journals[indexOfFirstJournalInJournals];
+            int indexOfFirstJournalInJournalsAsLocalVariable = indexOfFirstJournalInJournals;
+            runnableTask = () -> {
                 /*
                 
                 how do we find the index of the second journal to compare the first journal to?
@@ -158,23 +182,28 @@ public class PairwiseComparisonsWithArrayOfIntegers {
                 - and one more index to get to the second journal.
                
                                 
-                */
-                int second = first + 1 + data[first + 1] + 1;
+                 */
+//                int second = first + 1 + data[first + 1] + 1;
+                int indexOfSecondJournalInJournals = indexOfFirstJournalInJournalsAsLocalVariable + 1;
+                if (indexOfSecondJournalInJournals >= journals.length) {
+                    return;
+                }
+                int indexSecondJournalInDataArray = journals[indexOfSecondJournalInJournals];
+                int[] triplet;
 
                 // as long as we don't hit the end of the array...
-                while (second < data.length) {
-                    
+                while (indexSecondJournalInDataArray < data.length) {
                     // compute the similarities between the 2 journals
-                    int similarity = pairwiseComparison(first, second);
+                    int similarity = pairwiseComparison(indexFirstJournalInDataArray, indexSecondJournalInDataArray);
                     if (similarity > 0) {
-                        int[] triplet = new int[3];
-                        triplet[0] = data[first];
-                        triplet[1] = data[second];
+                        triplet = new int[3];
+                        triplet[0] = data[indexFirstJournalInDataArray];
+                        triplet[1] = data[indexSecondJournalInDataArray];
                         triplet[2] = similarity;
                         // this is the step where a similarity btw 2 journals has been found and it is offloaded to this queue.
                         queue.add(triplet);
                     }
-                    
+
                     /* and how do we move to the next journal to be compared to the first journal ?
                     
                     same logic as the logic we used to find this second journal, right above:
@@ -183,14 +212,21 @@ public class PairwiseComparisonsWithArrayOfIntegers {
                     - we move right by a number of indices which correspond to its number of associated authors. This number [the cardinality] is stored at [second +1]
                     - we add one indice to move past the cardinality as well, and one more to land on the next journal.
 
-                    */
-                    second += data[second + 1] + 1 + 1;
+                     */
+//                    second += data[second + 1] + 1 + 1;
+                    indexOfSecondJournalInJournals++;
+                    if (indexOfSecondJournalInJournals >= journals.length) {
+                        return;
+                    }
+                    indexSecondJournalInDataArray = journals[indexOfSecondJournalInJournals];
                 }
+
             };
             executor.execute(runnableTask);
+            indexOfFirstJournalInJournals++;
         }
         executor.shutdown();
-        //Awaits either 1 minutes or if all tasks are completed. Whatever is first. I don't know whats a reasonable await time.
+        //Awaits either 1 minute or if all tasks are completed. Whatever is first.
         executor.awaitTermination(1L, TimeUnit.MINUTES);
 
         queueProcessor.stop();
@@ -205,7 +241,6 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         // indices of the first authors
         // (potentially beyond last, when 0 authors) <-- I have added checks to make sure there is always one author in the data
         // so that 'first + 2' or 'second + 2' lands on an author, not on the next journal's id.
-        
         int f = first + 2;
         int s = second + 2;
 
@@ -240,5 +275,4 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         }
         return matches;
     }
-
 }
