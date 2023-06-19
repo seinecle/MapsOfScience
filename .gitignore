@@ -1,3 +1,9 @@
 /target/
 /data/
+<<<<<<< HEAD
 /assets/
+=======
+
+/.*
+/bin/
+>>>>>>> 49acf7f2b3fb9000815752e7be4dc9cceba50a0c
