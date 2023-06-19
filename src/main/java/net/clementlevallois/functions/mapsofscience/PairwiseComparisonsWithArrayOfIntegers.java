@@ -29,7 +29,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     static Path pathJournalIdMapping = Path.of("data/journal-id-mapping.txt");
     static Path pathAuthorIdMapping = Path.of("data/author-id-mapping.txt");
     static Path pathJournalsToAuthors = Path.of("data/all-journals-and-their-authors.txt");
-    static Path pathSimilarities = Path.of("data/similarities-with-integers.csv");
+    static Path pathSimilarities = Path.of("data/similarities-with-integers-at-least-2-no virtual-threads.csv");
     static Long2IntOpenHashMap mapJournals = new Long2IntOpenHashMap();
     static Long2IntOpenHashMap mapAuthors = new Long2IntOpenHashMap();
 
@@ -60,11 +60,14 @@ public class PairwiseComparisonsWithArrayOfIntegers {
          */
         Clock clock = new Clock("loading journal and author ids");
         List<String> allJournals = Files.readAllLines(pathJournalIdMapping);
+        System.out.println("number of journals: " + allJournals.size());
+
         for (String string : allJournals) {
             String[] lineFields = string.split(",");
             mapJournals.put(Long.parseLong(lineFields[0]), Integer.parseInt(lineFields[1]));
         }
         List<String> allAuthors = Files.readAllLines(pathAuthorIdMapping);
+        System.out.println("number of authors: " + allAuthors.size());
         for (String string : allAuthors) {
             String[] lineFields = string.split(",");
             mapAuthors.put(Long.parseLong(lineFields[0]), Integer.parseInt(lineFields[1]));
@@ -101,7 +104,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         clock = new Clock("initiating and filling the array");
         data = new int[count];
 
-        // this "firsts" array is a convenience array which stores the indices of all journals in the data[] array.
+        // this "journals" array is a convenience array which stores the indices of all journals in the data[] array.
         // useful later to iterate through journals in the outer loop
         journals = new int[mapJournals.size()];
         int i = 0;
@@ -159,7 +162,8 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         Thread queueProcessorThread = new Thread(queueProcessor);
         queueProcessorThread.start();
 
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+//        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        ExecutorService executor = Executors.newWorkStealingPool();
 
         int indexOfFirstJournalInJournals = 0;
         Runnable runnableTask;
@@ -195,7 +199,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
                 while (indexSecondJournalInDataArray < data.length) {
                     // compute the similarities between the 2 journals
                     int similarity = pairwiseComparison(indexFirstJournalInDataArray, indexSecondJournalInDataArray);
-                    if (similarity > 0) {
+                    if (similarity > 4) {
                         triplet = new int[3];
                         triplet[0] = data[indexFirstJournalInDataArray];
                         triplet[1] = data[indexSecondJournalInDataArray];

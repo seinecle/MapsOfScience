@@ -177,6 +177,7 @@ public class CreateListOfJournalsWithTheirAuthors {
 
         StringBuilder sb = new StringBuilder();
         LongSet journalIds = journal2AuthorsMap.keySet();
+        System.out.println("number of journals: " + journal2AuthorsMap.size());
         LongIterator journalIdsIterator = journalIds.longIterator();
         int index = 0;
         while (journalIdsIterator.hasNext()) {
@@ -200,6 +201,7 @@ public class CreateListOfJournalsWithTheirAuthors {
             ObjectLinkedOpenHashSet<Long> authors = journal2AuthorsMap.get(journalIdsIterator.nextLong());
             authorIds.addAll(authors);
         }
+        System.out.println("number of authors: " + authorIds.size());
         ObjectListIterator<Long> iteratorAuthors = authorIds.iterator();
         while (iteratorAuthors.hasNext()) {
             Long next = iteratorAuthors.next();
@@ -209,7 +211,6 @@ public class CreateListOfJournalsWithTheirAuthors {
         Files.writeString(Path.of(authorIdFileString), sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.WRITE,
                 StandardOpenOption.APPEND);
         clock.closeAndPrintClock();
-
     }
 
 }
