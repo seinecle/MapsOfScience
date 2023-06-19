@@ -55,6 +55,11 @@
             <artifactId>gephi-toolkit</artifactId>
             <version>0.10.1</version>
         </dependency>
+        <dependency>
+            <groupId>net.sourceforge.argparse4j</groupId>
+            <artifactId>argparse4j</artifactId>
+            <version>0.9.0</version>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
@@ -81,7 +86,8 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>net.clementlevallois.functions.mapsofscience.Controller</mainClass>
+                            <!--<mainClass>net.clementlevallois.functions.mapsofscience.PairwiseComparisonsWithArrayOfIntegers</mainClass>-->
+                            <mainClass>net.clementlevallois.functions.mapsofscience.similarity.JournalSimilaritiesComputer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

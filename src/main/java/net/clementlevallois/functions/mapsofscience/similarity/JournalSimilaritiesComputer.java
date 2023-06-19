@@ -30,7 +30,8 @@ public class JournalSimilaritiesComputer {
 
 	static final Map<String, Algorithm<?, ?>> algorithms = Map.of("original",
 			new Algorithm<>(OriginalInput::fromFile, OriginalSimilarityComputer::new), "array",
-			new Algorithm<>(ArrayInput::fromFile, ArraySimilarityComputer::new), "grouped",
+			new Algorithm<>(ArrayInput::fromFile, ArraySimilarityComputer::new), "another-array",
+			new Algorithm<>(AnotherArrayInput::fromFile, AnotherArraySimilarityComputer::new), "grouped",
 			new Algorithm<>(GroupedInput::fromFile, GroupedSimilarityComputer::new));
 
 	public static void main(String[] args) throws IOException, InterruptedException {
@@ -44,7 +45,7 @@ public class JournalSimilaritiesComputer {
 				.help("Limit to processsing only the first NUM_JOURNALS; zero for unlimited number");
 
 		parser.addArgument("-a", "--algorithms").metavar("ALG").type(String.class).required(true).nargs("+")
-				.choices("original", "array", "grouped").help("Algorithm(s) to use");
+				.choices("original", "array", "another-array", "grouped").help("Algorithm(s) to use");
 
 		parser.addArgument("-j", "--jobs", "--parallelism").metavar("JOBS").type(Integer.class).setDefault(0)
 				.help("Number of threads (jobs) to use; zero for unspecified number");

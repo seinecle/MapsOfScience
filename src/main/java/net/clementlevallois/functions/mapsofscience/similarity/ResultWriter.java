@@ -35,7 +35,7 @@ public interface ResultWriter {
 			return DUMMY;
 		}
 
-		Path outputFilePath = Path.of(path.toString().replace("$$", "$").replace("$alg", algorithm)
+		Path outputFilePath = Path.of(path.replace("$$", "$").replace("$alg", algorithm)
 				.replace("$limit", limit == null ? "unlimited" : String.valueOf(limit))
 				.replace("$jobs", jobs == null ? "unspecified" : String.valueOf(jobs)));
 

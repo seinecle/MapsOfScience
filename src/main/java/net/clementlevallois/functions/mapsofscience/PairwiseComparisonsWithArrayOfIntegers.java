@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,12 +42,23 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     // https://www.reddit.com/r/java/comments/13rlb26/speeding_up_pairwise_comparisons_to_28_millionsec/
     public static void main(String args[]) throws IOException, InterruptedException, ExecutionException {
         boolean testInMain = false;
+        int limit = Integer.MAX_VALUE - 10_000;
+
+        if (args.length > 0) {
+            limit = Integer.parseInt(args[0]);
+            System.out.println("run limited to " + limit + " entities");
+        } else {
+            System.out.println("run not limited");
+        }
+
         loadJournalAndAuthorIds();
-        createBigIntegerArray();
+
+        createBigIntegerArray(limit);
         if (testInMain) {
             data = new int[]{0, 3, 0, 5, 50, 1, 3, 2, 3, 5, 2, 5, 3, 6, 49, 50, 97, 3, 2, 30, 230};
             journals = new int[]{0, 5, 10, 17};
         }
+
         computeSimilarities(testInMain, pathSimilarities);
     }
 
@@ -75,7 +88,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         clock.closeAndPrintClock();
     }
 
-    public static void createBigIntegerArray() throws IOException {
+    public static void createBigIntegerArray(int limit) throws IOException {
 
         /*
         
@@ -92,6 +105,8 @@ public class PairwiseComparisonsWithArrayOfIntegers {
          */
         Clock clock = new Clock("measuring the length of the array we need");
         List<String> allJournalsAndTheirAuthors = Files.readAllLines(pathJournalsToAuthors);
+        int cutOff = Math.min(allJournalsAndTheirAuthors.size(),limit);
+        allJournalsAndTheirAuthors = allJournalsAndTheirAuthors.subList(0, cutOff);
 
         int count = 0;
         for (String string : allJournalsAndTheirAuthors) {
@@ -135,14 +150,12 @@ public class PairwiseComparisonsWithArrayOfIntegers {
             // then sort the ints ascendingly before inserted them in the array! Phew.
             // the sublist thing is to remove the journal id, which is the first element of the array
             List<String> authorsAsStrings = Arrays.asList(authorIdsAsString);
-            List<Integer> authorsAsIntegers = new ArrayList(authorsAsStrings.size());
+            Set<Integer> authorsAsIntegers = new TreeSet();
             for (String authorIdAsString : authorsAsStrings) {
                 long authorIdAsLong = Long.parseLong(authorIdAsString);
                 int authorIdAsInteger = mapAuthors.get(authorIdAsLong);
                 authorsAsIntegers.add(authorIdAsInteger);
             }
-            // Sort the List using Collections.sort()
-            Collections.sort(authorsAsIntegers);
             for (int authorIdAsInteger : authorsAsIntegers) {
                 data[i++] = authorIdAsInteger;
             }
@@ -240,7 +253,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     public static int pairwiseComparison(int first, int second) {
         // indices of the last authors
         int firstJournalLastAuthorIndex = first + 1 + data[first + 1];
-        int secondJournalLasrAuthorIndex = second + 1 + data[second + 1];
+        int secondJournalLastAuthorIndex = second + 1 + data[second + 1];
 
         // indices of the first authors
         // (potentially beyond last, when 0 authors) <-- I have added checks to make sure there is always one author in the data
@@ -255,7 +268,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
         int sa = -1;
 
         // this part I understood thanks to the explanations of ChatGPT: it consists in moving from index on both arrays as a quick way to count similar authors.
-        while (f <= firstJournalLastAuthorIndex && s <= secondJournalLasrAuthorIndex) {
+        while (f <= firstJournalLastAuthorIndex && s <= secondJournalLastAuthorIndex) {
             if (fa < 0) {
                 fa = data[f];
             }
