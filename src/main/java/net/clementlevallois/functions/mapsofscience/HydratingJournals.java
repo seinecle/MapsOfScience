@@ -58,14 +58,15 @@ public class HydratingJournals {
     Map<String, String> integerId2JournalName = new HashMap();
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path gexfPath = Path.of("C:\\Users\\levallois\\open\\nocode-app-functions\\MapsOfScience\\data\\maps\\20230607\\edges-removed.gexf");
+        Path gexfPath = Path.of("data\\maps\\20230607\\map with names min degree 5.gexf");
         HydratingJournals hj = new HydratingJournals();
-        hj.getJournalNames();
-        hj.writeJournalNames();
+//        hj.getJournalNamesFromAPI();
+//        hj.writeJournalNames();
+        hj.readJournalNames();
         hj.addJournalNamesToGexf(gexfPath);
     }
 
-    public void getJournalNames() throws IOException, InterruptedException {
+    public void getJournalNamesFromAPI() throws IOException, InterruptedException {
 
         List<String> journalIdsMapped = Files.readAllLines(Path.of("C:\\Users\\levallois\\open\\nocode-app-functions\\MapsOfScience\\data\\journal-id-mapping.txt"));
 
@@ -97,7 +98,18 @@ public class HydratingJournals {
         for (Map.Entry<String, String> entry : integerId2JournalName.entrySet()) {
             sb.append(entry.getKey()).append("|").append(entry.getValue()).append(System.lineSeparator());
         }
-        Files.writeString(Path.of("integer-ids-to-journal-names.txt"), sb.toString(), StandardCharsets.UTF_8);
+        Files.writeString(Path.of("data/integer-ids-to-journal-names.txt"), sb.toString(), StandardCharsets.UTF_8);
+    }
+
+    public void readJournalNames() throws IOException {
+        if (integerId2JournalName == null){
+            integerId2JournalName = new HashMap();
+        }
+        List<String> lines = Files.readAllLines(Path.of("data/integer-ids-to-journal-names.txt"));
+        for (String line: lines){
+            String [] fields = line.split("\\|");
+            integerId2JournalName.put(fields[0], fields[1]);            
+        }
     }
 
     public void callOpenAlex(String idsToFetch) throws IOException, InterruptedException {
@@ -184,7 +196,7 @@ public class HydratingJournals {
         stringWriter.close();
         String resultGexf = stringWriter.toString();
 
-        Files.writeString(Path.of("journal-map-with-names.gexf"), resultGexf);
+        Files.writeString(Path.of("data/journal-map-with-names.gexf"), resultGexf);
 
     }
 

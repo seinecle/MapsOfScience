@@ -31,7 +31,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     static Path pathJournalIdMapping = Path.of("data/journal-id-mapping.txt");
     static Path pathAuthorIdMapping = Path.of("data/author-id-mapping.txt");
     static Path pathJournalsToAuthors = Path.of("data/all-journals-and-their-authors.txt");
-    static Path pathSimilarities = Path.of("data/similarities-with-integers-at-least-2-no virtual-threads.csv");
+    static Path pathSimilarities = Path.of("data/similarities.csv");
     static Long2IntOpenHashMap mapJournals = new Long2IntOpenHashMap();
     static Long2IntOpenHashMap mapAuthors = new Long2IntOpenHashMap();
 
@@ -42,7 +42,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
     // https://www.reddit.com/r/java/comments/13rlb26/speeding_up_pairwise_comparisons_to_28_millionsec/
     public static void main(String args[]) throws IOException, InterruptedException, ExecutionException {
         boolean testInMain = false;
-        int limit = Integer.MAX_VALUE - 10_000;
+        int limit = 50_000;
 
         if (args.length > 0) {
             limit = Integer.parseInt(args[0]);
@@ -212,7 +212,7 @@ public class PairwiseComparisonsWithArrayOfIntegers {
                 while (indexSecondJournalInDataArray < data.length) {
                     // compute the similarities between the 2 journals
                     int similarity = pairwiseComparison(indexFirstJournalInDataArray, indexSecondJournalInDataArray);
-                    if (similarity > 4) {
+                    if (similarity > 0) {
                         triplet = new int[3];
                         triplet[0] = data[indexFirstJournalInDataArray];
                         triplet[1] = data[indexSecondJournalInDataArray];

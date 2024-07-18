@@ -30,8 +30,9 @@ public class AnotherArraySimilarityComputer implements SimilarityComputer {
     }
 
     private void process() {
-//        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        ExecutorService executor = Executors.newWorkStealingPool();
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        int threads = (Runtime.getRuntime().availableProcessors() * 2) - 1;
+//        ExecutorService executor = Executors.newWorkStealingPool(threads);
 
         int indexOfFirstJournalInJournals = 0;
         Runnable runnableTask;
